@@ -1,0 +1,100 @@
+/*定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸*/
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+/*定义滚动条轨道 内阴影+圆角*/
+::-webkit-scrollbar-track {
+    border-radius: 3px;
+    display: none;
+}
+
+/*定义滑块 内阴影+圆角*/
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(144, 147, 153, 0.5);
+    transition: opacity 0.12s ease-out;
+}
+
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-end {
+    justify-content: flex-end;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.align-end {
+    align-items: flex-end;
+}
+
+.loop(@i) when (@i <=80) {
+    .m-@{i} {
+        margin: @i + 0px;
+    }
+
+    .m-t-@{i} {
+        margin-top: @i + 0px;
+    }
+
+    .m-r-@{i} {
+        margin-right: @i + 0px;
+    }
+
+    .m-b-@{i} {
+        margin-bottom: @i + 0px;
+    }
+
+    .m-l-@{i} {
+        margin-left: @i + 0px;
+    }
+
+    .pad-@{i} {
+        padding: @i + 0px;
+    }
+
+    .pad-t-@{i} {
+        padding-top: @i + 0px;
+    }
+
+    .pad-r-@{i} {
+        padding-right: @i + 0px;
+    }
+
+    .pad-b-@{i} {
+        padding-bottom: @i + 0px;
+    }
+
+    .pad-l-@{i} {
+        padding-left: @i + 0px;
+    }
+
+
+    .loop((@i + 5)); // 递归调用自身
+}
+
+.loop(10);
