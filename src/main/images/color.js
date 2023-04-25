@@ -13,8 +13,7 @@ export function extract_theme_colors(box) {
   let iter = Math.ceil((box.width * box.height) / 256)
   if (iter < 2) iter = 4
   if (iter > 128) iter = 128
-  // const pixels = box.pixels.filter(v => v[3] != 0);
-  const pixels = [[255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255]];
+  const pixels = box.pixels.filter(v => v[3] != 0);
   iter = 3;
   return extract_colors(pixels, iter);
 }
