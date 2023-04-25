@@ -4,7 +4,7 @@ import path from 'path'
 import sharp from 'sharp'
 import { get_pixels, PixelsBox } from './parse'
 import { get_template_marks } from './position'
-import { extract_theme_colors, calc_color_diff } from './color'
+import { extract_theme_colors, calc_color_diff, color_to_hex } from './color'
 import { ColorError, ErrorType } from './error'
 import { send_process_status as origin_send } from '../event/handler'
 
@@ -100,7 +100,7 @@ async function read_templates(template_folder) {
   for (let i = 0; i < templates.length; i++) {
     const dirent = templates[i]
     if (dirent.isDirectory()) continue
-    if (dirent.name.endsWith('.png')) continue;
+    if (!dirent.name.endsWith('.png')) continue;
 
     send_process_status(`正在解析模板${dirent.name}...`, "process")
 
@@ -235,12 +235,4 @@ function set_output_path(image_folder) {
 
 function fix_path_sep(file_path) {
   return file_path.replace(/\//g, path.sep).replace(/\\/g, path.sep)
-}
-
-function color_to_hex(color) {
-  let red = color[0].toString(16).padStart('2', '0');
-  let green = color[1].toString(16).padStart('2', '0');
-  let blue = color[2].toString(16).padStart('2', '0');
-
-  return `#${red}${green}${blue}`;
 }

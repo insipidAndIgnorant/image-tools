@@ -381,8 +381,13 @@ var MMCQ = (function() {
                     count2 = lookaheadsum[d2];
                     while (!count2 && partialsum[d2 - 1]) count2 = lookaheadsum[--d2];
                     // set dimensions
-                    vbox1[dim2] = d2;
-                    vbox2[dim1] = vbox1[dim2] + 1;
+                    // modify: 不设置min > max; avg时就不会没有ntot
+                    if (d2 > vbox1[dim1]) {
+                        vbox1[dim2] = d2;
+                    }
+                    if (d2 + 1 < vbox2[dim2]) {
+                        vbox2[dim1] = d2 + 1;
+                    }
                     // console.log('vbox counts:', vbox.count(), vbox1.count(), vbox2.count());
                     return [vbox1, vbox2];
                 }
@@ -487,4 +492,4 @@ var MMCQ = (function() {
     }
 })();
 
-module.exports = MMCQ.quantize
+export default MMCQ.quantize
