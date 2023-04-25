@@ -100,6 +100,7 @@ async function read_templates(template_folder) {
   for (let i = 0; i < templates.length; i++) {
     const dirent = templates[i]
     if (dirent.isDirectory()) continue
+    if (dirent.name.endsWith('.png')) continue;
 
     send_process_status(`正在解析模板${dirent.name}...`, "process")
 
