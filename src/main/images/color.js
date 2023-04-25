@@ -13,7 +13,9 @@ export function extract_theme_colors(box) {
   let iter = Math.ceil((box.width * box.height) / 256)
   if (iter < 2) iter = 4
   if (iter > 128) iter = 128
-  const pixels = box.pixels.filter(v => v[3] != 0);
+  // const pixels = box.pixels.filter(v => v[3] != 0);
+  const pixels = [[255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255], [255,255,255]];
+  iter = 3;
   return extract_colors(pixels, iter);
 }
 
@@ -47,12 +49,24 @@ export function extract_border_color(box) {
 
 
 function extract_colors(pixels, iter) {
+  fix_color_overflow(pixels);
   const color_map = quantize(pixels, iter)
   if (!color_map) throw new ColorError('iter error', ErrorType.QuantizeGetError)
   const colors = color_map.palette();
   return find_middle_color(colors);
 }
 
+
+function fix_color_overflow(colors = []) {
+  colors.forEach(v => {
+    // quantize fn doCut r1+1
+    // fn avg ntot==0  => (r1+r2+1)/2*8
+    // 255/8 = 31; (31+1)*8 = 256
+    if (v[0] >= 255) v[0] = 247;
+    if (v[1] >= 255) v[1] = 247;
+    if (v[2] >= 255) v[2] = 247;
+  })
+}
 
 function find_middle_color(colors = []) {
   const cache = {}
