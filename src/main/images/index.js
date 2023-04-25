@@ -6,7 +6,7 @@ import { get_pixels, PixelsBox } from './parse'
 import { get_template_marks } from './position'
 import { extract_theme_colors, calc_color_diff } from './color'
 import { ColorError, ErrorType } from './error'
-import { send_process_status } from '../event/handler'
+import { send_process_status as origin_send } from '../event/handler'
 
 /**
  * @typedef { Object } Rect
@@ -35,23 +35,44 @@ let output_path = '';
 let error_path = '';
 let image_folder = '';
 let template_folder = '';
+
+function send_process_status(msg, status = "process", ...args) {
+  const time = new Date().toLocaleString()
+  fs.writeFile(image_folder + path.sep + 'log.log', `${time}: ${msg}\n`, { encoding: 'utf8', flag: 'a' });
+  origin_send(msg, status, ...args)
+}
+
 export async function handle_images_marks(input_image_folder, input_template_folder) {
   image_folder = fix_path_sep(input_image_folder);
   template_folder = fix_path_sep(input_template_folder);
   set_output_path(image_folder);
+
+  let success_count = 0;
   let error_count = 0;
 
   send_process_status("正在解析模板...", "process")
   await read_templates(template_folder)
+
+  if (TempalteMap.size <= 0) {
+    send_process_status("未找到模板文件，请确认模板路径是否选择正确！", "error");
+    return;
+  }
+
   send_process_status("模板解析完成，查找图片中...", "success")
   const files_path = await get_files_path(image_folder);
 
+  if (files_path.length <= 0) {
+    send_process_status("未找到图片文件，请确认图片路径是否选择正确！", "error");
+    return;
+  }
+
   for (let i = 0; i < files_path.length; i++) {
-    const name = path.parse(files_path[i]).name;
+    const name = path.basename(files_path[i]);
     try {
-      send_process_status("开始处理" + name + '...',  "process")
+      send_process_status(`开始处理${name}...`,  "process")
       await handle_images(files_path[i]);
-      send_process_status(name + '添加成功！',  "success");
+      send_process_status(`${name}添加成功`,  "success");
+      success_count += 1;
     } catch(err) {
       error_count += 1;
       await copy_unhandle_files(files_path[i]);
@@ -59,10 +80,14 @@ export async function handle_images_marks(input_image_folder, input_template_fol
       send_process_status(name + msg, "error");
     }
   }
-  send_process_status(`所有图片处理完成，请前往${output_path}查看`, "success");
-  shell.openPath(output_path);
+  send_process_status(`所有图片处理完成！`, "process");
+  if (success_count > 0)  {
+    send_process_status(`${success_count}个文件添加成功，请前往${output_path}查看`, "success");
+    shell.openPath(output_path);
+  }
+  
   if (error_count > 0) {
-    send_process_status(`有${error_count}个文件添加失败，请前往${error_path}查看`, "error");
+    send_process_status(`${error_count}个文件添加失败，请前往${error_path}查看`, "error");
     shell.openPath(error_path);
   }
 }
@@ -76,7 +101,7 @@ async function read_templates(template_folder) {
     const dirent = templates[i]
     if (dirent.isDirectory()) continue
 
-    send_process_status("正在解析模板" + dirent.name + '...', "process")
+    send_process_status(`正在解析模板${dirent.name}...`, "process")
 
     const file_path = fix_path_sep(template_folder + path.sep + dirent.name)
     const pixels = await get_pixels(file_path)
@@ -93,7 +118,11 @@ async function read_templates(template_folder) {
         color: extract_theme_colors(v)
       }
     })
-    send_process_status("模板" + dirent.name + '解析完成', "process")
+    send_process_status(`模板${dirent.name}解析完成:`, "process")
+    record.marks.forEach((v, i) => {
+      let hex = color_to_hex(v.color);
+      send_process_status(`主色调${i + 1}为${hex}`, 'process', hex)
+    });
 
     TempalteMap.set(file_path, record)
   }
@@ -112,8 +141,11 @@ async function get_files_path(image_folder) {
       if (dirent.isDirectory()) {
         dirs.push(dirent_path)
       } else {
-        send_process_status(dirent.name + '加入待处理队列...', "process")
-        files.push(dirent_path)
+        const ext = path.extname(dirent_path);
+        if (ext == '.png' || ext == '.jpg' || ext == '.jpeg') {
+          send_process_status(dirent.name + '加入待处理队列...', "process")
+          files.push(dirent_path)
+        }
       }
     }
   }
@@ -133,6 +165,10 @@ async function handle_images(image_path) {
   })
   if (!templates.length) throw new ColorError('未找到宽高匹配的模板！', ErrorType.NoMatchTemplate)
 
+  const dev_image_name = path.basename(image_path);
+
+  const clac_cache = {};
+
   let max_diff = 0
   /**@type { TemplateRecord } */
   let template = null
@@ -141,8 +177,17 @@ async function handle_images(image_path) {
     let mark_diff = 0
     for (let j = 0; j < marks.length; j++) {
       const { rect, color } = marks[j]
-      const box = PixelsBox.from_rect(rect, pixels, true)
-      const image_color = extract_theme_colors(box)
+      
+      const chche_key = JSON.stringify(rect);
+      let image_color = clac_cache[chche_key];
+      if (!image_color) {
+        const box = PixelsBox.from_rect(rect, pixels, true)
+        image_color = extract_theme_colors(box)
+      }
+      
+      let hex_color = color_to_hex(image_color);
+      send_process_status(`${dev_image_name}主色调${j + 1}为${hex_color}`, "process", hex_color)
+
       const diff = calc_color_diff(image_color, color)
       mark_diff += diff
     }
@@ -152,6 +197,7 @@ async function handle_images(image_path) {
     }
   }
 
+  send_process_status(`${dev_image_name}最终应用模板${path.basename(template.path)}`, "process");
   return merge_image(image_path, template.path);
 }
 
@@ -188,4 +234,12 @@ function set_output_path(image_folder) {
 
 function fix_path_sep(file_path) {
   return file_path.replace(/\//g, path.sep).replace(/\\/g, path.sep)
+}
+
+function color_to_hex(color) {
+  let red = color[0].toString(16).padStart('2', '0');
+  let green = color[1].toString(16).padStart('2', '0');
+  let blue = color[2].toString(16).padStart('2', '0');
+
+  return `#${red}${green}${blue}`;
 }

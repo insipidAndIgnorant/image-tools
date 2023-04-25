@@ -37,7 +37,7 @@ function remove_win(event) {
 
 
 let is_process = false;
-function start_process(event, image_folder, template_folder) {
+function start_process(event, image_folder = '', template_folder = '') {
   console.log('cwd is ', process.cwd())
   if (is_process) {
     return send_process_status("正在处理中，请完成后再试！", "error")
@@ -46,11 +46,20 @@ function start_process(event, image_folder, template_folder) {
     return send_process_status("图片路径和模板路径不能相同！", "error")
   }
 
+  const len = Math.min(image_folder.length, template_folder.length)
+  let is_same = true;
+  for (let i = 0; i < len; i++) {
+    if (image_folder[i] != template_folder[i]) {
+      is_same = false;
+      break;
+    }
+  }
+  if (is_same) {
+    return send_process_status("图片路径和模板路径不能为父子目录！", "error")
+  }
+
 
   is_process = true;
-  // const p1 = "D:\\WorkSpace\\KOC_TASK\\image-tools\\images\\files";
-  // const p2 = "D:\\WorkSpace\\KOC_TASK\\image-tools\\images\\template";
-  // handle_images_marks(p1, p2).catch(err => {
   handle_images_marks(image_folder, template_folder).catch(err => {
     send_process_status("图片处理失败，" + err.message || err, "error")
   }).finally(() => {
@@ -58,9 +67,9 @@ function start_process(event, image_folder, template_folder) {
   });
 }
 
-export function send_process_status(msg, status = "process") {
+export function send_process_status(msg, status = "process", ...args) {
   wins.forEach(v => {
-    v.webContents.send(EventName.PRECESS_STATUS, msg, status);
+    v.webContents.send(EventName.PRECESS_STATUS, msg, status, ...args);
   })
 }
 

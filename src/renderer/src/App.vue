@@ -5,17 +5,17 @@
     <el-form :model="form" :rules="rules" ref="form_ref" label-width="100px">
       <el-form-item prop="file_dir" label="图片路径">
         <el-input v-model="form.file_dir" readonly dark @click="choose_folder('file_dir')">
-          <template #append>
+          <!-- <template #append>
             <el-icon style="vertical-align: middle" size="20" @click="choose_folder('file_dir')">
               <FolderOpened />
             </el-icon>
-          </template>
+          </template> -->
         </el-input>
       </el-form-item>
 
       <el-form-item prop="template_dir" label="模板路径">
         <el-input v-model="form.template_dir" readonly dark @click="choose_folder('template_dir')">
-          <template #append>
+          <!-- <template #append>
             <el-icon
               style="vertical-align: middle"
               size="20"
@@ -23,13 +23,15 @@
             >
               <FolderOpened />
             </el-icon>
-          </template>
+          </template> -->
         </el-input>
       </el-form-item>
 
       <el-form-item label="详情">
         <div class="status-list">
-          <p class="status-msg" v-for="item of list" :class="item.status">{{ item.msg }}</p>
+          <p class="status-msg" v-for="item of list" :class="item.status">
+            <span :style="{ color: item.color }">{{ item.msg }}</span>
+          </p>
         </div>
       </el-form-item>
 
@@ -62,6 +64,7 @@ async function choose_folder(prop) {
 function start_process() {
   form_ref.value.validate((valid) => {
     if (valid) {
+      list.length = 0;
       _register()
       window.api.start_process(form.file_dir, form.template_dir)
     }
@@ -73,8 +76,8 @@ function _register() {
   window.api.on_process(_status_callback)
 }
 
-function _status_callback(event, msg, status) {
-  list.unshift({ msg, status })
+function _status_callback(event, msg, status, color = '') {
+  list.unshift({ msg, status, color })
 }
 
 onBeforeUnmount(() => {
