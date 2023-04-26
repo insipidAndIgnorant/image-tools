@@ -383,10 +383,14 @@ var MMCQ = (function() {
                     // set dimensions
                     // modify: 不设置min > max; avg时就不会没有ntot
                     if (d2 > vbox1[dim1]) {
-                        vbox1[dim2] = d2;
+                        vbox1[dim2] = d2; // do cut
+                    } else {
+                        vbox1._avg = vbox._avg; // copy
                     }
                     if (d2 + 1 < vbox2[dim2]) {
                         vbox2[dim1] = d2 + 1;
+                    } else {
+                        vbox2._avg = vbox._avg;
                     }
                     // console.log('vbox counts:', vbox.count(), vbox1.count(), vbox2.count());
                     return [vbox1, vbox2];

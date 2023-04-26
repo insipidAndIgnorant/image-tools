@@ -4,7 +4,7 @@ import path from 'path'
 import sharp from 'sharp'
 import { get_pixels, PixelsBox } from './parse'
 import { get_template_marks } from './position'
-import { extract_theme_colors, calc_color_diff, color_to_hex } from './color'
+import { extract_theme_colors, calc_color_sapc, color_to_hex } from './color'
 import { ColorError, ErrorType } from './error'
 import { send_process_status as origin_send } from '../event/handler'
 
@@ -189,7 +189,7 @@ async function handle_images(image_path) {
       let hex_color = color_to_hex(image_color);
       send_process_status(`${dev_image_name}主色调${j + 1}为${hex_color}`, "process", hex_color)
 
-      const diff = calc_color_diff(image_color, color)
+      const diff = calc_color_sapc(image_color, color)
       mark_diff += diff
     }
     if (mark_diff > max_diff) {
